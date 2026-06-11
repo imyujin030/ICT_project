@@ -263,4 +263,4 @@ No server required.
 | Name | Lim Yujin (임유진) |
 | Student ID | 2024270678 |
 | Course | ICT — Intermediate Project |
-| Year | 2024 |
+| Date | 2026.05.31 |
