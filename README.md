@@ -1,6 +1,6 @@
-# CLOSET.KR — Smart Inventory & Order Management System
+# Smart Inventory & Order Management System
 
-> **ICT Module 4 — Intermediate Project**
+> **ICT — Intermediate Project**
 > Student: Lim Yujin | Student ID: 2024270678
 
 ---
@@ -15,7 +15,7 @@
 
 ## 1. Project Overview
 
-**CLOSET.KR** is a smart inventory and order management system designed for a small fashion e-commerce warehouse. It solves a critical real-world problem: when stock runs out, orders are automatically cancelled — causing permanent revenue loss.
+**The project** is a smart inventory and order management system designed for a small fashion e-commerce warehouse. It solves a critical real-world problem: when stock runs out, orders are automatically cancelled — causing permanent revenue loss.
 
 This system prevents that by:
 - Tracking stock in **real time** per SKU
