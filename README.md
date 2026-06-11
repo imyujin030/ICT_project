@@ -31,13 +31,13 @@ The project is delivered as a **standalone HTML dashboard** that runs in any bro
 
 ```
 ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│  1. Data     │────▶│ 2. Transmit  │────▶│ 3. Collect   │
+│  1. Data     │───▶│ 2. Transmit  │───▶│ 3. Collect   │
 │  Generation  │     │ time.sleep(1)│     │   SQLite DB  │
 │  (CSV file)  │     │ 15% data loss│     │              │
 └──────────────┘     └──────────────┘     └──────┬───────┘
-                                                  │
+                                                 │
 ┌──────────────┐     ┌──────────────┐     ┌──────▼───────┐
-│  6. Dashboard│◀────│ 5. Decision  │◀────│ 4. AI/       │
+│  6. Dashboard│◀───│ 5. Decision  │◀───│ 4. AI/       │
 │  HTML / Web  │     │ IF stock <   │     │ Recovery     │
 │  Dashboard   │     │ threshold →  │     │ missing → 0  │
 │              │     │ "Restock"    │     │ or 'No Data' │
@@ -89,10 +89,10 @@ Default threshold: **5 units** (configurable in Settings page of the dashboard).
                   │ (stock insufficient)
                   ▼
               Delayed ◀──────────────────────────────┐
-                  │                                  │
+                  │                                   │
                   │ auto: customer message sent       │
-                  │                                  │
-                  └──▶ [stock replenished] ──▶ Resume ┘
+                  │                                   │
+                  └──▶[stock replenished]──▶ Resume ┘
 
   Any active state ──▶ Cancelled ──▶ Refund (pending → processing → done)
 ```
@@ -262,5 +262,5 @@ No server required.
 |-------|-------|
 | Name | Lim Yujin (임유진) |
 | Student ID | 2024270678 |
-| Course | ICT Module 4 — Intermediate Project |
+| Course | ICT — Intermediate Project |
 | Year | 2024 |
