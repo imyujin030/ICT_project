@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLOSET.KR — 재고·주문 통합 관리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --s50:#f8f9fa;--s100:#f1f3f5;--s200:#e9ecef;--s300:#dee2e6;
+  --s400:#ced4da;--s500:#adb5bd;--s600:#868e96;--s700:#495057;
+  --s800:#343a40;--s900:#212529;
+  --red-bg:#fff5f5;--red-bd:#ffc9c9;--red-tx:#c92a2a;--red-bar:#f03e3e;
+  --amb-bg:#fff9db;--amb-bd:#ffec99;--amb-tx:#875700;--amb-bar:#f59f00;
+  --grn-bg:#ebfbee;--grn-bd:#b2f2bb;--grn-tx:#1a6b31;--grn-bar:#2f9e44;
+  --blu-bg:#e7f5ff;--blu-bd:#a5d8ff;--blu-tx:#1864ab;--blu-bar:#1971c2;
+  --pur-bg:#f3f0ff;--pur-bd:#d0bfff;--pur-tx:#5f3dc4;
+  --cyn-bg:#e3fafc;--cyn-bd:#99e9f2;--cyn-tx:#0b7285;
+  --pnk-bg:#fff0f6;--pnk-bd:#fcc2d7;--pnk-tx:#a61e4d;
+  --topbar-h:54px;--sidebar-w:220px;
+  --font:'Noto Sans KR',system-ui,sans-serif;
+  --mono:'JetBrains Mono',monospace;
+  --r4:4px;--r6:6px;--r8:8px;--r12:12px;
+}
+html,body{height:100%;background:var(--s100);font-family:var(--font);font-size:14px;color:var(--s800)}
+
+/* ── TOPBAR ── */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-h);background:var(--s900);border-bottom:1px solid #000;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;z-index:200}
+.tb-brand{display:flex;align-items:center;gap:10px}
+.tb-logo{width:30px;height:30px;border-radius:var(--r6);background:var(--s700);display:flex;align-items:center;justify-content:center}
+.tb-title{font-size:13px;font-weight:500;color:#fff}
+.tb-sub{font-size:11px;color:var(--s500);margin-top:1px}
+.tb-right{display:flex;align-items:center;gap:8px}
+.live-pill{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);font-size:11px;color:var(--s400)}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#2f9e44}
+.live-dot.pulse{animation:pulse 1.8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.tb-btn{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r4);border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--s300);font-size:12px;font-family:var(--font);cursor:pointer;transition:all .15s}
+.tb-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+.tb-btn.accent{background:#1971c2;border-color:#1971c2;color:#fff}
+.tb-btn.accent:hover{background:#1864ab}
+
+/* ── SIDEBAR ── */
+.shell{display:flex;padding-top:var(--topbar-h);min-height:100vh}
+.sidebar{width:var(--sidebar-w);flex-shrink:0;background:#fff;border-right:1px solid var(--s200);position:fixed;top:var(--topbar-h);bottom:0;left:0;overflow-y:auto;padding:1rem 0;z-index:100}
+.nav-sec{font-size:10px;font-weight:700;color:var(--s400);text-transform:uppercase;letter-spacing:.08em;padding:8px 18px 4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 18px;font-size:13px;color:var(--s600);cursor:pointer;transition:all .12s;border-left:2px solid transparent;user-select:none}
+.nav-item:hover{background:var(--s50);color:var(--s800)}
+.nav-item.active{background:var(--blu-bg);color:var(--blu-tx);border-left-color:var(--blu-bar);font-weight:500}
+.nb{margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--red-bar);color:#fff;font-size:10px;font-family:var(--mono);display:flex;align-items:center;justify-content:center}
+.nb.amber{background:var(--amb-bar)}.nb.blue{background:var(--blu-bar)}.nb.cyan{background:#0b7285}.nb.purple{background:var(--pur-tx)}
+.sidebar-hr{border:none;border-top:1px solid var(--s200);margin:8px 0}
+
+/* ── CONTENT ── */
+.content{flex:1;margin-left:var(--sidebar-w);padding:1.5rem 1.75rem 3rem;min-width:0}
+.page{display:none}
+.page.active{display:block;animation:fadeSlide .2s ease}
+@keyframes fadeSlide{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.page-title{font-size:18px;font-weight:700;color:var(--s900);margin-bottom:1.5rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.page-title span{font-weight:300;color:var(--s500);font-size:14px}
+.page-title-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+
+/* ── METRICS ── */
+.metric-grid{display:grid;gap:10px;margin-bottom:1.5rem}
+.cols3{grid-template-columns:repeat(3,1fr)}
+.cols4{grid-template-columns:repeat(4,1fr)}
+.cols5{grid-template-columns:repeat(5,1fr)}
+.cols6{grid-template-columns:repeat(6,1fr)}
+.mcard{background:#fff;border:1px solid var(--s200);border-radius:var(--r8);padding:.875rem 1.1rem;transition:border-color .15s}
+.mcard:hover{border-color:var(--s400)}
+.mcard-label{font-size:10px;font-weight:700;color:var(--s500);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.mcard-val{font-size:26px;font-weight:700;color:var(--s900);font-family:var(--mono);line-height:1}
+.mcard-val.red{color:var(--red-tx)}.mcard-val.amber{color:var(--amb-tx)}.mcard-val.green{color:var(--grn-tx)}.mcard-val.blue{color:var(--blu-tx)}.mcard-val.cyan{color:var(--cyn-tx)}.mcard-val.purple{color:var(--pur-tx)}
+.mcard-sub{font-size:11px;color:var(--s500);margin-top:4px}
+
+/* ── CARD ── */
+.card{background:#fff;border:1px solid var(--s200);border-radius:var(--r12);margin-bottom:1.25rem;overflow:hidden}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;border-bottom:1px solid var(--s200);background:var(--s50);gap:8px;flex-wrap:wrap}
+.card-head-title{font-size:12px;font-weight:700;color:var(--s700);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:7px}
+.card-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+
+/* ── SEARCH BAR ── */
+.search-bar{display:flex;gap:8px;padding:12px 18px;border-bottom:1px solid var(--s200);background:#fff}
+.search-bar input{flex:1;font-size:13px;padding:7px 10px;border:1px solid var(--s300);border-radius:var(--r4);color:var(--s900);background:#fff;outline:none;font-family:var(--font)}
+.search-bar input:focus{border-color:var(--s600)}
+.search-bar select{font-size:12px;padding:7px 8px;border:1px solid var(--s300);border-radius:var(--r4);color:var(--s700);background:#fff;font-family:var(--font);outline:none}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;padding:8px 16px;font-size:10px;font-weight:700;color:var(--s500);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--s200);background:var(--s50);white-space:nowrap;cursor:default}
+thead th.sortable{cursor:pointer}
+thead th.sortable:hover{color:var(--s800)}
+tbody td{padding:10px 16px;font-size:13px;color:var(--s800);border-bottom:1px solid var(--s100);vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--s50)}
+tbody tr.tr-danger td{background:#fffafa}
+tbody tr.tr-warn td{background:#fffdf4}
+tbody tr.tr-cyan td{background:#f3feff}
+tbody tr.tr-purple td{background:#f8f7ff}
+tbody tr.tr-danger:hover td{background:#fff0f0}
+tbody tr.tr-warn:hover td{background:#fffbe6}
+tbody tr.tr-cyan:hover td{background:#e3fafc55}
+.td-name{font-weight:500;color:var(--s900)}
+.td-mono{font-family:var(--mono);font-size:12px}
+.td-muted{color:var(--s500);font-size:12px}
+.td-link{color:var(--blu-tx);cursor:pointer;font-family:var(--mono);font-size:12px}
+.td-link:hover{text-decoration:underline}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:var(--r4);font-size:11px;font-weight:600;white-space:nowrap;border:1px solid}
+.b-ok{background:var(--grn-bg);border-color:var(--grn-bd);color:var(--grn-tx)}
+.b-warn{background:var(--amb-bg);border-color:var(--amb-bd);color:var(--amb-tx)}
+.b-danger{background:var(--red-bg);border-color:var(--red-bd);color:var(--red-tx)}
+.b-blue{background:var(--blu-bg);border-color:var(--blu-bd);color:var(--blu-tx)}
+.b-gray{background:var(--s100);border-color:var(--s300);color:var(--s600)}
+.b-cyan{background:var(--cyn-bg);border-color:var(--cyn-bd);color:var(--cyn-tx)}
+.b-purple{background:var(--pur-bg);border-color:var(--pur-bd);color:var(--pur-tx)}
+.b-pink{background:var(--pnk-bg);border-color:var(--pnk-bd);color:var(--pnk-tx)}
+.b-pending{background:#fff9db;border-color:#ffec99;color:#875700}
+.b-confirmed{background:#e7f5ff;border-color:#a5d8ff;color:#1864ab}
+.b-processing{background:#f3f0ff;border-color:#d0bfff;color:#5f3dc4}
+.b-shipped{background:#ebfbee;border-color:#b2f2bb;color:#1a6b31}
+.b-cancelled{background:#f1f3f5;border-color:#dee2e6;color:#868e96}
+.b-delayed{background:var(--cyn-bg);border-color:var(--cyn-bd);color:var(--cyn-tx)}
+.b-refund-pending{background:var(--pnk-bg);border-color:var(--pnk-bd);color:var(--pnk-tx)}
+.b-refunded{background:var(--s100);border-color:var(--s300);color:var(--s600)}
+.b-po-ordered{background:var(--pur-bg);border-color:var(--pur-bd);color:var(--pur-tx)}
+.b-po-arrived{background:var(--grn-bg);border-color:var(--grn-bd);color:var(--grn-tx)}
+
+/* ── BAR ── */
+.bar-wrap{display:flex;align-items:center;gap:8px}
+.bar-track{flex:1;height:5px;background:var(--s200);border-radius:3px;overflow:hidden;min-width:50px}
+.bar-fill{height:100%;border-radius:3px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.bar-pct{font-size:11px;color:var(--s500);font-family:var(--mono);min-width:30px;text-align:right}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:var(--r4);font-size:12px;font-family:var(--font);font-weight:500;cursor:pointer;transition:all .15s;border:1px solid}
+.btn-dark{background:var(--s900);border-color:var(--s900);color:#fff}.btn-dark:hover{background:var(--s700)}
+.btn-ghost{background:#fff;border-color:var(--s300);color:var(--s700)}.btn-ghost:hover{background:var(--s50);border-color:var(--s500)}
+.btn-danger{background:var(--red-bg);border-color:var(--red-bd);color:var(--red-tx)}.btn-danger:hover{background:#ffe3e3}
+.btn-green{background:var(--grn-bg);border-color:var(--grn-bd);color:var(--grn-tx)}.btn-green:hover{background:#d3f9d8}
+.btn-cyan{background:var(--cyn-bg);border-color:var(--cyn-bd);color:var(--cyn-tx)}.btn-cyan:hover{background:#c5f6fa}
+.btn-purple{background:var(--pur-bg);border-color:var(--pur-bd);color:var(--pur-tx)}.btn-purple:hover{background:#e5dbff}
+.btn-pink{background:var(--pnk-bg);border-color:var(--pnk-bd);color:var(--pnk-tx)}.btn-pink:hover{background:#fcc2d7}
+.btn-sm{padding:4px 10px;font-size:11px}
+.btn[disabled]{opacity:.38;cursor:not-allowed;pointer-events:none}
+.act-btn{width:26px;height:26px;border-radius:var(--r4);border:1px solid transparent;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--s400);transition:all .15s}
+.act-btn:hover{background:var(--s100);border-color:var(--s300);color:var(--s700)}
+.act-btn.del:hover{background:var(--red-bg);border-color:var(--red-bd);color:var(--red-tx)}
+.act-group{display:flex;gap:2px;flex-wrap:wrap}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:500;animation:fIn .18s ease}
+@keyframes fIn{from{opacity:0}to{opacity:1}}
+.modal{background:#fff;border-radius:var(--r12);border:1px solid var(--s200);overflow:hidden;animation:pIn .22s cubic-bezier(.34,1.36,.64,1);width:480px;max-width:calc(100vw - 2rem);max-height:90vh;display:flex;flex-direction:column}
+.modal-lg{width:640px}
+@keyframes pIn{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:scale(1)}}
+.modal-head{padding:15px 20px;border-bottom:1px solid var(--s100);background:var(--s50);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-title{font-size:14px;font-weight:700;color:var(--s900);display:flex;align-items:center;gap:8px}
+.modal-close{width:26px;height:26px;border-radius:var(--r4);border:none;background:none;cursor:pointer;color:var(--s400);font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.modal-close:hover{background:var(--s200);color:var(--s800)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-foot{padding:13px 20px;border-top:1px solid var(--s100);display:flex;gap:8px;justify-content:flex-end;background:var(--s50);flex-shrink:0;flex-wrap:wrap}
+
+/* ── FORM ── */
+.field{margin-bottom:14px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:10px;font-weight:700;color:var(--s500);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.field input,.field select,.field textarea{width:100%;padding:8px 10px;font-size:13px;font-family:var(--font);border:1px solid var(--s300);border-radius:var(--r4);color:var(--s900);background:#fff;outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--s700);box-shadow:0 0 0 3px rgba(52,58,64,.07)}
+.field textarea{resize:vertical;min-height:80px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field-row.cols3{grid-template-columns:1fr 1fr 1fr}
+.field-hint{font-size:11px;color:var(--s400);margin-top:4px}
+.field-readonly{padding:8px 10px;background:var(--s50);border-radius:var(--r4);font-size:13px;color:var(--s700);border:1px solid var(--s200)}
+
+/* ── MESSAGE BOX ── */
+.msg-preview{background:var(--cyn-bg);border:1px solid var(--cyn-bd);border-radius:var(--r8);padding:12px 14px;font-size:12px;color:var(--cyn-tx);line-height:1.7;white-space:pre-wrap}
+.msg-sent-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:var(--r4);background:var(--cyn-bg);border:1px solid var(--cyn-bd);color:var(--cyn-tx);font-size:11px;font-weight:600}
+
+/* ── ORDER ITEMS ── */
+.order-items{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.order-items th{text-align:left;padding:6px 10px;font-size:10px;font-weight:700;color:var(--s500);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--s200);background:var(--s50)}
+.order-items td{padding:8px 10px;border-bottom:1px solid var(--s100);vertical-align:middle}
+.order-items tr:last-child td{border-bottom:none}
+
+/* ── ALERT STRIP ── */
+.alert-strip{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:var(--r8);margin-bottom:6px;font-size:13px;border:1px solid;animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.alert-strip.red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red-tx)}
+.alert-strip.amber{background:var(--amb-bg);border-color:var(--amb-bd);color:var(--amb-tx)}
+.alert-strip.cyan{background:var(--cyn-bg);border-color:var(--cyn-bd);color:var(--cyn-tx)}
+.alert-strip.green{background:var(--grn-bg);border-color:var(--grn-bd);color:var(--grn-tx)}
+.alert-strip.purple{background:var(--pur-bg);border-color:var(--pur-bd);color:var(--pur-tx)}
+
+/* ── HISTORY ── */
+.hist-list{overflow-y:auto}
+.hist-list::-webkit-scrollbar{width:4px}
+.hist-list::-webkit-scrollbar-thumb{background:var(--s300);border-radius:2px}
+.hist-row{display:flex;align-items:flex-start;gap:10px;padding:7px 16px;border-bottom:1px solid var(--s100);font-size:12px}
+.hist-row:last-child{border-bottom:none}
+.hist-time{font-family:var(--mono);color:var(--s400);min-width:58px;flex-shrink:0;padding-top:1px}
+.hist-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.hist-msg{color:var(--s700);line-height:1.5;flex:1}
+.empty-state{padding:2.5rem;text-align:center;color:var(--s400);font-size:13px}
+
+/* ── SPLIT ── */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem}
+
+/* ── STAT TREND (미니 스파크라인 대용) ── */
+.trend-up{color:var(--grn-tx);font-size:11px}
+.trend-dn{color:var(--red-tx);font-size:11px}
+
+/* ── SETTINGS SECTION ── */
+.settings-section{border:1px solid var(--s200);border-radius:var(--r8);overflow:hidden;margin-bottom:14px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--s100)}
+.settings-row:last-child{border-bottom:none}
+.settings-row-info{flex:1}
+.settings-row-label{font-size:13px;font-weight:500;color:var(--s800)}
+.settings-row-desc{font-size:11px;color:var(--s500);margin-top:2px}
+.settings-row-ctrl{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:16px}
+.settings-row-ctrl input,.settings-row-ctrl select{font-size:13px;padding:6px 8px;border:1px solid var(--s300);border-radius:var(--r4);color:var(--s900);font-family:var(--font);outline:none}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--s300);border-radius:3px}
+
+@media(max-width:900px){
+  .sidebar{display:none}.content{margin-left:0}
+  .cols5,.cols6{grid-template-columns:repeat(3,1fr)}
+  .cols4{grid-template-columns:repeat(2,1fr)}
+  .split{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-brand">
+    <div class="tb-logo"><svg width="16" height="16" fill="none" stroke="#adb5bd" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></div>
+    <div>
+      <div class="tb-title" id="tb-shop-name">CLOSET.KR</div>
+      <div class="tb-sub">패션 쇼핑몰 통합 관리 시스템</div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <div class="live-pill"><span class="live-dot pulse" id="liveDot"></span><span id="liveLabel">실시간 연동</span></div>
+    <button class="tb-btn" id="autoBtn" onclick="toggleAuto()">
+      <svg id="autoIcon" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      <span id="autoLabel">자동 시뮬레이션</span>
+    </button>
+    <button class="tb-btn accent" onclick="openNewOrder()">
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      신규 주문 접수
+    </button>
+  </div>
+</div>
+
+<div class="shell">
+<nav class="sidebar">
+  <div class="nav-sec">대시보드</div>
+  <div class="nav-item active" onclick="showPage('overview')" id="nav-overview">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    전체 현황
+  </div>
+  <div class="nav-sec" style="margin-top:8px">주문 관리</div>
+  <div class="nav-item" onclick="showPage('orders')" id="nav-orders">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+    주문 목록
+    <span class="nb blue" id="nb-orders">0</span>
+  </div>
+  <div class="nav-item" onclick="showPage('pending')" id="nav-pending">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    처리 대기
+    <span class="nb" id="nb-pending">0</span>
+  </div>
+  <div class="nav-item" onclick="showPage('delayed')" id="nav-delayed">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+    배송지연 관리
+    <span class="nb cyan" id="nb-delayed">0</span>
+  </div>
+  <div class="nav-item" onclick="showPage('cancel')" id="nav-cancel">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+    취소·환불 관리
+    <span class="nb amber" id="nb-cancel">0</span>
+  </div>
+  <div class="nav-sec" style="margin-top:8px">재고 관리</div>
+  <div class="nav-item" onclick="showPage('inventory')" id="nav-inventory">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+    재고 현황
+    <span class="nb amber" id="nb-inv">0</span>
+  </div>
+  <div class="nav-item" onclick="showPage('po')" id="nav-po">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+    발주 관리
+    <span class="nb purple" id="nb-po">0</span>
+  </div>
+  <div class="nav-item" onclick="showPage('stats')" id="nav-stats">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    판매 통계
+  </div>
+  <hr class="sidebar-hr">
+  <div class="nav-sec">시스템</div>
+  <div class="nav-item" onclick="showPage('history')" id="nav-history">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polyline points="12 8 12 12 14 14"/><path d="M3.05 11a9 9 0 1 1 .5 4"/></svg>
+    변경 이력
+  </div>
+  <div class="nav-item" onclick="showPage('settings')" id="nav-settings">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    설정
+  </div>
+</nav>
+
+<main class="content">
+
+<!-- ═ OVERVIEW ═ -->
+<div class="page active" id="page-overview">
+  <div class="page-title">전체 현황 <span>실시간 대시보드</span></div>
+  <div class="metric-grid cols6" id="ov-metrics"></div>
+  <div id="ov-alerts" style="margin-bottom:1rem"></div>
+  <div class="split">
+    <div class="card">
+      <div class="card-head"><div class="card-head-title">재고 부족 품목</div><button class="btn btn-ghost btn-sm" onclick="showPage('inventory')">전체 →</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>품목명</th><th>가용</th><th>상태</th><th>재고율</th></tr></thead><tbody id="ov-inv-body"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-head-title">최근 주문</div><button class="btn btn-ghost btn-sm" onclick="showPage('orders')">전체 →</button></div>
+      <div class="tbl-wrap"><table><thead><tr><th>주문번호</th><th>구매자</th><th>품목</th><th>상태</th></tr></thead><tbody id="ov-order-body"></tbody></table></div>
+    </div>
+  </div>
+  <div class="split">
+    <div class="card">
+      <div class="card-head"><div class="card-head-title">발주 대기 품목</div><button class="btn btn-ghost btn-sm" onclick="showPage('po')">전체 →</button></div>
+      <div class="hist-list" style="max-height:160px" id="ov-po-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-head-title">최근 변경 이력</div></div>
+      <div class="hist-list" style="max-height:160px" id="ov-hist"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═ ORDERS ═ -->
+<div class="page" id="page-orders">
+  <div class="page-title">주문 목록 <span>전체 주문 조회 및 상태 관리</span></div>
+  <div class="metric-grid cols4" id="ord-metrics"></div>
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-title">전체 주문</div>
+      <div class="card-actions">
+        <select id="ord-filter" onchange="renderOrdersPage()" style="font-size:12px;padding:5px 8px;border:1px solid var(--s300);border-radius:var(--r4);color:var(--s700);background:#fff;font-family:var(--font)">
+          <option value="">전체 상태</option>
+          <option value="pending">대기중</option><option value="confirmed">확인됨</option>
+          <option value="processing">처리중</option><option value="shipped">출고완료</option>
+          <option value="delayed">배송지연</option><option value="cancelled">취소됨</option>
+        </select>
+      </div>
+    </div>
+    <div class="search-bar">
+      <input id="ord-search" type="text" placeholder="주문번호 또는 구매자 이름 검색..." oninput="renderOrdersPage()"/>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>주문번호</th><th>접수시간</th><th>구매자</th><th>품목</th><th>수량</th><th>상태</th><th>재고</th><th>메시지</th><th>액션</th></tr></thead>
+      <tbody id="ord-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═ PENDING ═ -->
+<div class="page" id="page-pending">
+  <div class="page-title">처리 대기 <span>확인·출고가 필요한 주문</span></div>
+  <div id="pending-alerts"></div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">처리 대기 주문</div></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>주문번호</th><th>구매자</th><th>주문 품목 (재고 확인)</th><th>재고 상태</th><th>주문 상태</th><th>액션</th></tr></thead>
+      <tbody id="pending-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═ DELAYED ═ -->
+<div class="page" id="page-delayed">
+  <div class="page-title">배송지연 관리 <span>재고 부족으로 지연된 주문 — 주문은 보존되며 재입고 후 처리 재개</span></div>
+  <div id="delayed-alerts"></div>
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-title">지연 주문 목록</div>
+      <span class="td-muted" style="font-size:11px">재고 보충 시 '처리 재개' 버튼 활성화</span>
+    </div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>주문번호</th><th>구매자</th><th>지연 품목</th><th>부족 수량</th><th>접수 시간</th><th>메시지 발송</th><th>액션</th></tr></thead>
+      <tbody id="delayed-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═ CANCEL / REFUND ═ -->
+<div class="page" id="page-cancel">
+  <div class="page-title">취소·환불 관리 <span>취소 주문 및 환불 처리 현황</span></div>
+  <div class="metric-grid cols3" id="cancel-metrics"></div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">취소·환불 목록</div></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>주문번호</th><th>구매자</th><th>품목</th><th>취소 사유</th><th>취소 시간</th><th>환불 상태</th><th>액션</th></tr></thead>
+      <tbody id="cancel-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═ INVENTORY ═ -->
+<div class="page" id="page-inventory">
+  <div class="page-title">재고 현황 <span>카테고리별 재고 모니터링 — 현재·예약·가용 관리</span></div>
+  <div class="metric-grid cols5" id="inv-metrics"></div>
+  <div id="inv-alerts"></div>
+  <div class="card">
+    <div class="card-head">
+      <div class="card-head-title">전체 품목</div>
+      <div class="card-actions">
+        <select id="inv-cat-filter" onchange="renderInventoryPage()" style="font-size:12px;padding:5px 8px;border:1px solid var(--s300);border-radius:var(--r4);color:var(--s700);background:#fff;font-family:var(--font)">
+          <option value="">전체 카테고리</option>
+          <option value="상의">상의</option><option value="하의">하의</option>
+          <option value="아우터">아우터</option><option value="원피스·세트">원피스·세트</option>
+          <option value="액세서리">액세서리</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="openInvAdd()">+ 품목 추가</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><table>
+      <colgroup><col style="width:7%"><col style="width:25%"><col style="width:7%"><col style="width:6%"><col style="width:6%"><col style="width:7%"><col style="width:20%"><col style="width:11%"><col style="width:11%"></colgroup>
+      <thead><tr><th>카테고리</th><th>품목명</th><th>현재</th><th>예약</th><th>가용</th><th>최대</th><th>재고율</th><th>상태</th><th></th></tr></thead>
+      <tbody id="inv-body"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═ PO (발주 관리) ═ -->
+<div class="page" id="page-po">
+  <div class="page-title">발주 관리 <span>재고 부족 품목 발주 및 입고 처리</span>
+    <div class="page-title-right"><button class="btn btn-purple btn-sm" onclick="openPoAdd()">+ 발주 등록</button></div>
+  </div>
+  <div class="metric-grid cols3" id="po-metrics"></div>
+  <div id="po-alerts"></div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">발주 목록</div></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>발주번호</th><th>품목명</th><th>발주 수량</th><th>공급업체</th><th>발주일</th><th>예상 입고일</th><th>상태</th><th>액션</th></tr></thead>
+      <tbody id="po-body"></tbody>
+    </table></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">재주문 권고 품목</div><span class="td-muted" style="font-size:11px">가용 재고 임계값 미만 품목</span></div>
+    <div class="tbl-wrap"><table>
+      <thead><tr><th>품목명</th><th>현재 가용</th><th>임계값</th><th>권고 발주량</th><th></th></tr></thead>
+      <tbody id="po-recommend"></tbody>
+    </table></div>
+  </div>
+</div>
+
+<!-- ═ STATS ═ -->
+<div class="page" id="page-stats">
+  <div class="page-title">판매 통계 <span>품목별 판매량 및 회전율</span></div>
+  <div class="metric-grid cols4" id="stats-metrics"></div>
+  <div class="split">
+    <div class="card">
+      <div class="card-head"><div class="card-head-title">품목별 판매량 (누적)</div></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>순위</th><th>품목명</th><th>판매량</th><th>비율</th></tr></thead>
+        <tbody id="stats-body"></tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-head-title">카테고리별 판매 현황</div></div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>카테고리</th><th>판매량</th><th>취소율</th><th>지연율</th></tr></thead>
+        <tbody id="stats-cat-body"></tbody>
+      </table></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═ HISTORY ═ -->
+<div class="page" id="page-history">
+  <div class="page-title">변경 이력 <span>주문·재고·발주·메시지 전체 로그</span></div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">전체 이력</div><button class="btn btn-ghost btn-sm" onclick="clearHistory()">지우기</button></div>
+    <div class="hist-list" id="full-hist" style="max-height:600px"></div>
+  </div>
+</div>
+
+<!-- ═ SETTINGS ═ -->
+<div class="page" id="page-settings">
+  <div class="page-title">설정 <span>시스템 운영 환경 설정</span></div>
+  <div class="card">
+    <div class="card-head"><div class="card-head-title">운영 설정</div></div>
+    <div class="modal-body" style="padding:16px 20px">
+      <div class="settings-section">
+        <div class="settings-row">
+          <div class="settings-row-info"><div class="settings-row-label">쇼핑몰 이름</div><div class="settings-row-desc">상단 로고 옆에 표시됩니다</div></div>
+          <div class="settings-row-ctrl"><input id="set-shop-name" type="text" value="CLOSET.KR" style="width:180px"/><button class="btn btn-ghost btn-sm" onclick="applyShopName()">적용</button></div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info"><div class="settings-row-label">재주문 임계값</div><div class="settings-row-desc">가용 재고가 이 수량 미만이면 '재주문 필요'로 분류됩니다</div></div>
+          <div class="settings-row-ctrl"><input id="set-threshold" type="number" min="1" max="100" value="5" style="width:80px;text-align:center"/><button class="btn btn-ghost btn-sm" onclick="applyThreshold()">적용</button></div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info"><div class="settings-row-label">배송지연 메시지 자동 발송</div><div class="settings-row-desc">재고 부족 주문 접수 시 고객 안내 메시지를 자동으로 발송합니다</div></div>
+          <div class="settings-row-ctrl"><select id="set-auto-msg" onchange="applyAutoMsg()" style="width:100px"><option value="1">켜짐</option><option value="0">꺼짐</option></select></div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info"><div class="settings-row-label">자동 발주 권고 기준</div><div class="settings-row-desc">발주 권고량 = 최대재고 − 현재재고</div></div>
+          <div class="settings-row-ctrl"><span class="badge b-ok">자동 계산</span></div>
+        </div>
+      </div>
+      <div class="settings-section">
+        <div class="settings-row" style="background:var(--s50);padding:8px 16px">
+          <div class="settings-row-info"><div class="settings-row-label" style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--s500)">시뮬레이션</div></div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-row-info"><div class="settings-row-label">시뮬레이션 간격</div><div class="settings-row-desc">자동 시뮬레이션 실행 주기 (초) — 실제 운영 시 불필요</div></div>
+          <div class="settings-row-ctrl"><input id="set-sim-interval" type="number" min="1" max="30" value="2" style="width:80px;text-align:center"/><button class="btn btn-ghost btn-sm" onclick="applySimInterval()">적용</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+<div id="modalContainer"></div>
+
+<script>
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let cfg = { threshold:5, autoMsg:true, simInterval:2000, shopName:'CLOSET.KR' };
+let ticks=0, autoTimer=null, nextOrderId=1001, nextPoId=5001;
+let historyLog=[], purchaseOrders=[], salesLog=[];
+
+const CATEGORIES = ['상의','하의','아우터','원피스·세트','액세서리'];
+
+let inventory = [
+  {id:1, cat:'상의',    name:'오버핏 크루넥 티셔츠 (화이트/S)',  count:32, reserved:0, max:80,  sold:0, updatedAt:new Date()},
+  {id:2, cat:'상의',    name:'오버핏 크루넥 티셔츠 (화이트/M)',  count:28, reserved:0, max:80,  sold:0, updatedAt:new Date()},
+  {id:3, cat:'상의',    name:'오버핏 크루넥 티셔츠 (블랙/M)',    count:4,  reserved:0, max:80,  sold:0, updatedAt:new Date()},
+  {id:4, cat:'상의',    name:'린넨 셔츠 (베이지/Free)',           count:17, reserved:0, max:50,  sold:0, updatedAt:new Date()},
+  {id:5, cat:'상의',    name:'스트라이프 반팔 셔츠 (네이비/L)',   count:3,  reserved:0, max:40,  sold:0, updatedAt:new Date()},
+  {id:6, cat:'상의',    name:'크롭 후드집업 (그레이/S)',           count:11, reserved:0, max:60,  sold:0, updatedAt:new Date()},
+  {id:7, cat:'상의',    name:'크롭 후드집업 (그레이/M)',           count:2,  reserved:0, max:60,  sold:0, updatedAt:new Date()},
+  {id:8, cat:'하의',    name:'와이드 데님 팬츠 (인디고/26)',      count:9,  reserved:0, max:45,  sold:0, updatedAt:new Date()},
+  {id:9, cat:'하의',    name:'와이드 데님 팬츠 (인디고/28)',      count:1,  reserved:0, max:45,  sold:0, updatedAt:new Date()},
+  {id:10,cat:'하의',    name:'슬랙스 (차콜/30)',                   count:14, reserved:0, max:50,  sold:0, updatedAt:new Date()},
+  {id:11,cat:'하의',    name:'슬랙스 (차콜/32)',                   count:6,  reserved:0, max:50,  sold:0, updatedAt:new Date()},
+  {id:12,cat:'하의',    name:'미디 플리츠 스커트 (크림/S)',        count:5,  reserved:0, max:35,  sold:0, updatedAt:new Date()},
+  {id:13,cat:'하의',    name:'미디 플리츠 스커트 (블랙/M)',        count:0,  reserved:0, max:35,  sold:0, updatedAt:new Date()},
+  {id:14,cat:'아우터',  name:'레더 바이커 자켓 (블랙/S)',          count:7,  reserved:0, max:25,  sold:0, updatedAt:new Date()},
+  {id:15,cat:'아우터',  name:'레더 바이커 자켓 (블랙/M)',          count:3,  reserved:0, max:25,  sold:0, updatedAt:new Date()},
+  {id:16,cat:'아우터',  name:'오버핏 코튼 코트 (오트밀/Free)',     count:12, reserved:0, max:30,  sold:0, updatedAt:new Date()},
+  {id:17,cat:'아우터',  name:'나일론 짚업 점퍼 (올리브/L)',        count:4,  reserved:0, max:40,  sold:0, updatedAt:new Date()},
+  {id:18,cat:'원피스·세트',name:'플로럴 시어 원피스 (라벤더/S)',  count:8,  reserved:0, max:30,  sold:0, updatedAt:new Date()},
+  {id:19,cat:'원피스·세트',name:'리넨 셋업 세트 (아이보리/M)',    count:2,  reserved:0, max:20,  sold:0, updatedAt:new Date()},
+  {id:20,cat:'액세서리',name:'버킷햇 (베이지/Free)',               count:22, reserved:0, max:60,  sold:0, updatedAt:new Date()},
+  {id:21,cat:'액세서리',name:'캔버스 토트백 (내추럴)',             count:15, reserved:0, max:50,  sold:0, updatedAt:new Date()},
+  {id:22,cat:'액세서리',name:'양말 3-pack (화이트)',               count:40, reserved:0, max:100, sold:0, updatedAt:new Date()},
+];
+let nextInvId=23;
+let orders=[];
+
+const BUYERS=['김나연','이서윤','박지현','최하은','정수아','강민지','윤지은','한소희','조예린','임채원','신유진','오다인','배서현','류아름','노은서','문지우','안혜진','송다현','황민아','전지수'];
+const SUPPLIERS=['스타일소싱','패브릭플러스','트렌드인','K-패션도매','미래텍스타일'];
+const CANCEL_REASONS=['단순 변심','사이즈 불만족','색상 불일치','배송 지연','타 제품 구매','중복 주문'];
+
+const STATUS_LABELS={pending:'대기중',confirmed:'확인됨',processing:'처리중',shipped:'출고완료',cancelled:'취소됨',delayed:'배송지연'};
+const STATUS_NEXT={pending:'confirmed',confirmed:'processing',processing:'shipped'};
+const STATUS_NEXT_LABEL={pending:'주문 확인',confirmed:'처리 시작',processing:'출고 처리'};
+const REFUND_LABELS={pending:'환불 대기',processing:'환불 처리중',done:'환불 완료'};
+
+// ── HELPERS ──
+function nowStr(){return new Date().toTimeString().slice(0,8)}
+function fmtTime(d){return d.toTimeString().slice(0,8)}
+function timeAgo(d){const s=Math.floor((Date.now()-d)/1000);if(s<5)return '방금';if(s<60)return s+'초 전';if(s<3600)return Math.floor(s/60)+'분 전';return Math.floor(s/3600)+'시간 전'}
+function invById(id){return inventory.find(i=>i.id===id)}
+function available(item){return Math.max(0,item.count-item.reserved)}
+function statusBadge(s){const m={pending:'b-pending',confirmed:'b-confirmed',processing:'b-processing',shipped:'b-shipped',cancelled:'b-cancelled',delayed:'b-delayed'};return `<span class="badge ${m[s]||'b-gray'}">${STATUS_LABELS[s]||s}</span>`}
+function invStatus(item){const a=available(item);if(a===0||a<cfg.threshold)return 'danger';if(a<cfg.threshold*2)return 'warn';return 'ok'}
+function invBadge(s){if(s==='danger')return`<span class="badge b-danger">재주문 필요</span>`;if(s==='warn')return`<span class="badge b-warn">주의</span>`;return`<span class="badge b-ok">정상</span>`}
+function barColor(s){if(s==='danger')return'#f03e3e';if(s==='warn')return'#f59f00';return'#2f9e44'}
+function addHistory(color,msg){historyLog.unshift({time:nowStr(),color,msg});if(historyLog.length>500)historyLog.pop()}
+function svgIcon(path,w=14){return`<svg width="${w}" height="${w}" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">${path}</svg>`}
+
+// ── DELAY MESSAGE ──
+function buildDelayMsg(order){
+  const itemList=order.items.map(i=>{const inv=invById(i.invId);const a=inv?available(inv):0;const s=Math.max(0,i.qty-a);return`  - ${i.name} (주문 ${i.qty}개 / 부족 ${s}개)`;}).join('\n');
+  return `[${cfg.shopName}] 배송 지연 안내\n\n안녕하세요, ${order.buyer} 고객님.\n주문번호 ${order.id}에 대해 안내드립니다.\n\n아래 상품의 재고 부족으로 배송이 일시 지연되고 있습니다.\n\n${itemList}\n\n현재 재입고를 준비 중이며, 입고 즉시 신속하게 발송해드리겠습니다.\n불편을 드려 죄송합니다.\n\n${cfg.shopName} 고객 서비스팀`;
+}
+
+// ── NAV ──
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  renderPage(name);
+}
+function renderPage(name){
+  ({overview:renderOverview,orders:renderOrdersPage,pending:renderPendingPage,delayed:renderDelayedPage,cancel:renderCancelPage,inventory:renderInventoryPage,po:renderPoPage,stats:renderStatsPage,history:renderHistoryPage,settings:renderSettingsPage}[name]||renderOverview)();
+}
+function renderCurrentPage(){const a=document.querySelector('.page.active');if(a)renderPage(a.id.replace('page-',''))}
+
+// ── BADGES ──
+function updateBadges(){
+  const pend=orders.filter(o=>['pending','confirmed'].includes(o.status)).length;
+  const del=orders.filter(o=>o.status==='delayed').length;
+  const can=orders.filter(o=>o.status==='cancelled'&&o.refundStatus==='pending').length;
+  const invW=inventory.filter(i=>invStatus(i)!=='ok').length;
+  const poW=purchaseOrders.filter(p=>p.status==='ordered').length;
+  const setN=(id,v)=>{const el=document.getElementById(id);if(!el)return;el.textContent=v;el.style.display=v>0?'flex':'none'};
+  setN('nb-orders',orders.length);setN('nb-pending',pend);setN('nb-delayed',del);
+  setN('nb-cancel',can);setN('nb-inv',invW);setN('nb-po',poW);
+}
+
+// ── OVERVIEW ──
+function renderOverview(){
+  const total=orders.length,pend=orders.filter(o=>o.status==='pending').length;
+  const shipped=orders.filter(o=>o.status==='shipped').length;
+  const delayed=orders.filter(o=>o.status==='delayed').length;
+  const cancelled=orders.filter(o=>o.status==='cancelled').length;
+  const totalStock=inventory.reduce((a,b)=>a+(b.count||0),0);
+  document.getElementById('ov-metrics').innerHTML=[
+    {l:'총 주문',v:total,c:'',s:'전체'},{l:'처리 대기',v:pend,c:'amber',s:'확인 필요'},
+    {l:'배송 지연',v:delayed,c:'cyan',s:'재고 부족'},{l:'출고 완료',v:shipped,c:'green',s:'완료'},
+    {l:'취소됨',v:cancelled,c:'red',s:'환불 포함'},{l:'총 재고',v:totalStock.toLocaleString(),c:'blue',s:'개'},
+  ].map(m=>`<div class="mcard"><div class="mcard-label">${m.l}</div><div class="mcard-val ${m.c}">${m.v}</div><div class="mcard-sub">${m.s}</div></div>`).join('');
+
+  // alerts
+  const lowInv=inventory.filter(i=>invStatus(i)==='danger');
+  const delOrders=orders.filter(o=>o.status==='delayed');
+  let ah='';
+  lowInv.slice(0,3).forEach(i=>{ah+=`<div class="alert-strip red">${svgIcon('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>')}<strong>${i.name}</strong> 재고 부족 — 가용 ${available(i)}개<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="showPage('po')">발주 →</button></div>`});
+  if(lowInv.length>3) ah+=`<div class="alert-strip red" style="font-size:12px;padding:6px 14px">외 ${lowInv.length-3}개 품목 추가 부족</div>`;
+  delOrders.slice(0,2).forEach(o=>{const ms=o.msgSentAt?`<span class="msg-sent-badge">✉ 발송됨</span>`:'<span class="badge b-warn">미발송</span>';ah+=`<div class="alert-strip cyan">${svgIcon('<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>')}<strong>${o.id}</strong> (${o.buyer}) 배송 지연 ${ms}<button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="showPage('delayed')">관리 →</button></div>`});
+  document.getElementById('ov-alerts').innerHTML=ah;
+
+  const lowItems=inventory.filter(i=>invStatus(i)!=='ok').sort((a,b)=>available(a)-available(b));
+  document.getElementById('ov-inv-body').innerHTML=lowItems.slice(0,8).map(item=>{
+    const s=invStatus(item);const pct=item.max>0?Math.round((item.count/item.max)*100):0;
+    return`<tr class="${s==='danger'?'tr-danger':'tr-warn'}"><td style="font-size:12px">${item.name}</td><td class="td-mono">${available(item)}</td><td>${invBadge(s)}</td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor(s)}"></div></div><span class="bar-pct">${pct}%</span></div></td></tr>`;
+  }).join('')||`<tr><td colspan="4"><div class="empty-state">재고 부족 품목 없음 ✓</div></td></tr>`;
+
+  const recent=[...orders].sort((a,b)=>b.createdAt-a.createdAt).slice(0,8);
+  document.getElementById('ov-order-body').innerHTML=recent.map(o=>`<tr><td class="td-link" onclick="openOrderDetail('${o.id}')">${o.id}</td><td class="td-name">${o.buyer}</td><td class="td-muted" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.items.map(i=>i.name+'×'+i.qty).join(', ')}</td><td>${statusBadge(o.status)}</td></tr>`).join('')||`<tr><td colspan="4"><div class="empty-state">주문 없음</div></td></tr>`;
+
+  const pendPo=purchaseOrders.filter(p=>p.status==='ordered');
+  document.getElementById('ov-po-list').innerHTML=pendPo.slice(0,6).map(p=>`<div class="hist-row"><span class="hist-time">${p.poId}</span><span class="hist-dot" style="background:var(--pur-tx)"></span><span class="hist-msg">${p.itemName} ${p.qty}개 — ${p.supplier} (입고예정: ${p.eta})</span></div>`).join('')||'<div class="empty-state">발주 대기 없음 ✓</div>';
+  document.getElementById('ov-hist').innerHTML=historyLog.slice(0,8).map(h=>`<div class="hist-row"><span class="hist-time">${h.time}</span><span class="hist-dot" style="background:${h.color}"></span><span class="hist-msg">${h.msg}</span></div>`).join('')||'<div class="empty-state">이력 없음</div>';
+}
+
+// ── ORDERS PAGE ──
+function renderOrdersPage(){
+  const filter=document.getElementById('ord-filter')?.value||'';
+  const search=(document.getElementById('ord-search')?.value||'').trim().toLowerCase();
+  let list=[...orders];
+  if(filter) list=list.filter(o=>o.status===filter);
+  if(search) list=list.filter(o=>o.id.toLowerCase().includes(search)||o.buyer.toLowerCase().includes(search));
+  list.sort((a,b)=>b.createdAt-a.createdAt);
+  const cnt=s=>orders.filter(o=>o.status===s).length;
+  document.getElementById('ord-metrics').innerHTML=[
+    {l:'전체',v:orders.length,c:''},{l:'대기·확인',v:cnt('pending')+cnt('confirmed'),c:'amber'},
+    {l:'배송지연',v:cnt('delayed'),c:'cyan'},{l:'출고완료',v:cnt('shipped'),c:'green'},
+  ].map(m=>`<div class="mcard"><div class="mcard-label">${m.l}</div><div class="mcard-val ${m.c}">${m.v}</div></div>`).join('');
+  document.getElementById('ord-body').innerHTML=list.map(o=>{
+    const itemStr=o.items.map(i=>`${i.name}×${i.qty}`).join(', ');
+    const totalQty=o.items.reduce((a,b)=>a+b.qty,0);
+    const hasLow=o.items.some(i=>{const inv=invById(i.invId);return !inv||available(inv)<i.qty});
+    const stockB=hasLow?`<span class="badge b-danger">부족</span>`:`<span class="badge b-ok">확인됨</span>`;
+    const msgC=o.msgSentAt?`<span class="msg-sent-badge">✉ ${fmtTime(o.msgSentAt)}</span>`:`<span class="td-muted">—</span>`;
+    const nextS=STATUS_NEXT[o.status];
+    const advB=nextS&&!hasLow?`<button class="btn btn-ghost btn-sm" onclick="advanceOrder('${o.id}')">${STATUS_NEXT_LABEL[o.status]}</button>`:'';
+    const delB=(o.status!=='shipped'&&o.status!=='cancelled'&&o.status!=='delayed'&&hasLow)?`<button class="btn btn-cyan btn-sm" onclick="openDelayModal('${o.id}')">지연 처리</button>`:'';
+    const resB=o.status==='delayed'?`<button class="btn btn-green btn-sm" onclick="resolveDelay('${o.id}')">재개</button>`:'';
+    const canB=(o.status!=='shipped'&&o.status!=='cancelled')?`<button class="btn btn-danger btn-sm" onclick="openCancelModal('${o.id}')">취소</button>`:'';
+    return`<tr class="${o.status==='delayed'?'tr-cyan':''}"><td class="td-link" onclick="openOrderDetail('${o.id}')">${o.id}</td><td class="td-muted">${fmtTime(o.createdAt)}</td><td class="td-name">${o.buyer}</td><td class="td-muted" style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${itemStr}">${itemStr}</td><td class="td-mono">${totalQty}</td><td>${statusBadge(o.status)}</td><td>${stockB}</td><td>${msgC}</td><td><div class="act-group">${advB}${delB}${resB}${canB}</div></td></tr>`;
+  }).join('')||`<tr><td colspan="9"><div class="empty-state">주문이 없습니다</div></td></tr>`;
+}
+
+// ── PENDING ──
+function renderPendingPage(){
+  const pending=orders.filter(o=>['pending','confirmed'].includes(o.status)).sort((a,b)=>b.createdAt-a.createdAt);
+  document.getElementById('pending-alerts').innerHTML=!pending.length?'<div class="alert-strip green" style="margin-bottom:1rem">✓ 처리 대기 주문이 없습니다</div>':'';
+  document.getElementById('pending-body').innerHTML=pending.map(o=>{
+    const allOk=o.items.every(i=>{const inv=invById(i.invId);return inv&&available(inv)>=i.qty});
+    const rows=o.items.map(i=>{const inv=invById(i.invId);const a=inv?available(inv):0;const ok=a>=i.qty;return`${i.name}×${i.qty} <span style="color:${ok?'var(--grn-tx)':'var(--red-tx)'};font-size:11px;font-weight:600">(가용:${a})</span>`;}).join('<br>');
+    const stockB=allOk?`<span class="badge b-ok">재고 충분</span>`:`<span class="badge b-danger">재고 부족</span>`;
+    const nextS=STATUS_NEXT[o.status];
+    const advB=nextS&&allOk?`<button class="btn btn-green btn-sm" onclick="advanceOrder('${o.id}')">${STATUS_NEXT_LABEL[o.status]}</button>`:nextS?`<button class="btn btn-ghost btn-sm" disabled>${STATUS_NEXT_LABEL[o.status]}</button>`:'';
+    const delB=!allOk?`<button class="btn btn-cyan btn-sm" onclick="openDelayModal('${o.id}')">지연 처리</button>`:'';
+    const canB=`<button class="btn btn-danger btn-sm" onclick="openCancelModal('${o.id}')">취소</button>`;
+    return`<tr><td class="td-link" onclick="openOrderDetail('${o.id}')">${o.id}</td><td class="td-name">${o.buyer}</td><td style="font-size:12px;line-height:1.9">${rows}</td><td>${stockB}</td><td>${statusBadge(o.status)}</td><td><div class="act-group">${advB}${delB}${canB}</div></td></tr>`;
+  }).join('')||`<tr><td colspan="6"><div class="empty-state">처리 대기 주문이 없습니다 ✓</div></td></tr>`;
+}
+
+// ── DELAYED ──
+function renderDelayedPage(){
+  const delayed=orders.filter(o=>o.status==='delayed');
+  const unno=delayed.filter(o=>!o.msgSentAt).length;
+  let ah=unno?`<div class="alert-strip amber" style="margin-bottom:1rem">${svgIcon('<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>')}<strong>${unno}건</strong> 고객 메시지 미발송 — 발송 버튼을 눌러 안내하세요.</div>`:'';
+  if(!delayed.length) ah+=`<div class="alert-strip green" style="margin-bottom:1rem">✓ 배송 지연 주문이 없습니다</div>`;
+  document.getElementById('delayed-alerts').innerHTML=ah;
+  document.getElementById('delayed-body').innerHTML=delayed.map(o=>{
+    const shortItems=o.items.filter(i=>{const inv=invById(i.invId);return !inv||available(inv)<i.qty});
+    const shortStr=shortItems.map(i=>i.name).join(', ')||'—';
+    const shortQty=shortItems.reduce((acc,i)=>{const inv=invById(i.invId);return acc+Math.max(0,i.qty-(inv?available(inv):0));},0);
+    const msgC=o.msgSentAt?`<span class="msg-sent-badge">✉ ${fmtTime(o.msgSentAt)}</span>`:`<button class="btn btn-cyan btn-sm" onclick="openDelayModal('${o.id}')">메시지 발송</button>`;
+    const canFill=o.items.every(i=>{const inv=invById(i.invId);return inv&&available(inv)>=i.qty});
+    const resB=canFill?`<button class="btn btn-green btn-sm" onclick="resolveDelay('${o.id}')">처리 재개</button>`:`<button class="btn btn-ghost btn-sm" disabled>처리 재개</button>`;
+    const canB=`<button class="btn btn-danger btn-sm" onclick="openCancelModal('${o.id}')">취소</button>`;
+    return`<tr class="tr-cyan"><td class="td-link" onclick="openOrderDetail('${o.id}')">${o.id}</td><td class="td-name">${o.buyer}</td><td class="td-muted" style="font-size:12px">${shortStr}</td><td class="td-mono" style="color:var(--red-tx)">${shortQty}개</td><td class="td-muted">${fmtTime(o.createdAt)}</td><td>${msgC}</td><td><div class="act-group">${resB}${canB}</div></td></tr>`;
+  }).join('')||`<tr><td colspan="7"><div class="empty-state">배송 지연 주문이 없습니다</div></td></tr>`;
+}
+
+// ── CANCEL / REFUND ──
+function renderCancelPage(){
+  const cancelled=orders.filter(o=>o.status==='cancelled');
+  const refPend=cancelled.filter(o=>o.refundStatus==='pending').length;
+  const refDone=cancelled.filter(o=>o.refundStatus==='done').length;
+  document.getElementById('cancel-metrics').innerHTML=[
+    {l:'취소 주문',v:cancelled.length,c:'',s:'누적'},{l:'환불 대기',v:refPend,c:'red',s:'처리 필요'},{l:'환불 완료',v:refDone,c:'green',s:'완료'},
+  ].map(m=>`<div class="mcard"><div class="mcard-label">${m.l}</div><div class="mcard-val ${m.c}">${m.v}</div><div class="mcard-sub">${m.s}</div></div>`).join('');
+  document.getElementById('cancel-body').innerHTML=cancelled.sort((a,b)=>b.cancelledAt-a.cancelledAt).map(o=>{
+    const refB=o.refundStatus==='pending'?`<button class="btn btn-purple btn-sm" onclick="processRefund('${o.id}')">환불 시작</button>`:
+               o.refundStatus==='processing'?`<button class="btn btn-green btn-sm" onclick="processRefund('${o.id}')">환불 완료 처리</button>`:'';
+    const rs=o.refundStatus==='done'?'<span class="badge b-gray">환불완료</span>':o.refundStatus==='processing'?'<span class="badge b-purple">환불처리중</span>':'<span class="badge b-pink">환불대기</span>';
+    return`<tr><td class="td-link" onclick="openOrderDetail('${o.id}')">${o.id}</td><td class="td-name">${o.buyer}</td><td class="td-muted" style="font-size:12px">${o.items.map(i=>i.name+'×'+i.qty).join(', ')}</td><td class="td-muted">${o.cancelReason||'—'}</td><td class="td-muted">${o.cancelledAt?fmtTime(o.cancelledAt):'—'}</td><td>${rs}</td><td>${refB}</td></tr>`;
+  }).join('')||`<tr><td colspan="7"><div class="empty-state">취소된 주문이 없습니다</div></td></tr>`;
+}
+
+// ── INVENTORY ──
+function renderInventoryPage(){
+  const danger=inventory.filter(i=>invStatus(i)==='danger').length;
+  const warn=inventory.filter(i=>invStatus(i)==='warn').length;
+  const ok=inventory.filter(i=>invStatus(i)==='ok').length;
+  const totalR=inventory.reduce((a,b)=>a+(b.reserved||0),0);
+  const totalA=inventory.reduce((a,b)=>a+available(b),0);
+  document.getElementById('inv-metrics').innerHTML=[
+    {l:'전체 품목',v:inventory.length,c:''},{l:'재주문 필요',v:danger,c:'red'},{l:'주의',v:warn,c:'amber'},{l:'정상',v:ok,c:'green'},{l:'예약/가용',v:totalR+'/'+totalA,c:'blue'},
+  ].map(m=>`<div class="mcard"><div class="mcard-label">${m.l}</div><div class="mcard-val ${m.c}">${m.v}</div></div>`).join('');
+  const lowItems=inventory.filter(i=>invStatus(i)==='danger');
+  document.getElementById('inv-alerts').innerHTML=lowItems.map(i=>`<div class="alert-strip red" style="margin-bottom:6px">${svgIcon('<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>')}<strong>${i.name}</strong> — 가용 ${available(i)}개<button class="btn btn-purple btn-sm" style="margin-left:auto" onclick="quickPo(${i.id})">바로 발주</button><button class="btn btn-ghost btn-sm" onclick="openInvEdit(${i.id})">수정</button></div>`).join('');
+  const catFilter=document.getElementById('inv-cat-filter')?.value||'';
+  const list=catFilter?inventory.filter(i=>i.cat===catFilter):inventory;
+  document.getElementById('inv-body').innerHTML=list.map((item)=>{
+    const s=invStatus(item);const a=available(item);const pct=item.max>0?Math.round((item.count/item.max)*100):0;
+    return`<tr class="${s==='danger'?'tr-danger':s==='warn'?'tr-warn':''}"><td><span class="badge b-gray" style="font-size:10px">${item.cat}</span></td><td class="td-name" style="font-size:12px">${item.name}</td><td class="td-mono">${item.count}</td><td class="td-mono" style="color:var(--blu-tx)">${item.reserved}</td><td class="td-mono" style="font-weight:600;color:${s==='danger'?'var(--red-tx)':s==='warn'?'var(--amb-tx)':'var(--grn-tx)'}">${a}</td><td class="td-mono td-muted">${item.max}</td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${barColor(s)}"></div></div><span class="bar-pct">${pct}%</span></div></td><td>${invBadge(s)}</td><td><div class="act-group"><button class="act-btn" onclick="openInvEdit(${item.id})" title="수정">${svgIcon('<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',12)}</button><button class="act-btn del" onclick="deleteInvItem(${item.id})" title="삭제">${svgIcon('<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>',12)}</button></div></td></tr>`;
+  }).join('')||`<tr><td colspan="9"><div class="empty-state">품목이 없습니다</div></td></tr>`;
+}
+
+// ── PO PAGE ──
+function renderPoPage(){
+  const ordered=purchaseOrders.filter(p=>p.status==='ordered').length;
+  const arrived=purchaseOrders.filter(p=>p.status==='arrived').length;
+  document.getElementById('po-metrics').innerHTML=[
+    {l:'전체 발주',v:purchaseOrders.length,c:''},{l:'발주 중',v:ordered,c:'purple'},{l:'입고 완료',v:arrived,c:'green'},
+  ].map(m=>`<div class="mcard"><div class="mcard-label">${m.l}</div><div class="mcard-val ${m.c}">${m.v}</div></div>`).join('');
+  const poAlerts=purchaseOrders.filter(p=>p.status==='ordered');
+  document.getElementById('po-alerts').innerHTML=poAlerts.length?`<div class="alert-strip purple" style="margin-bottom:1rem">${svgIcon('<line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>')}<strong>${poAlerts.length}건</strong> 발주 진행 중 — 입고 확인 후 '입고 처리' 버튼을 눌러주세요.</div>`:'';
+  document.getElementById('po-body').innerHTML=purchaseOrders.sort((a,b)=>b.orderedAt-a.orderedAt).map(p=>{
+    const arB=p.status==='ordered'?`<button class="btn btn-green btn-sm" onclick="receiveStock('${p.poId}')">입고 처리</button>`:'';
+    const sb=p.status==='arrived'?'<span class="badge b-po-arrived">입고완료</span>':'<span class="badge b-po-ordered">발주중</span>';
+    return`<tr class="${p.status==='ordered'?'tr-purple':''}"><td class="td-mono">${p.poId}</td><td style="font-size:12px">${p.itemName}</td><td class="td-mono">${p.qty}개</td><td class="td-muted">${p.supplier}</td><td class="td-muted">${fmtTime(p.orderedAt)}</td><td class="td-muted">${p.eta}</td><td>${sb}</td><td>${arB}</td></tr>`;
+  }).join('')||`<tr><td colspan="8"><div class="empty-state">발주 내역이 없습니다</div></td></tr>`;
+  const reco=inventory.filter(i=>invStatus(i)!=='ok').sort((a,b)=>available(a)-available(b));
+  document.getElementById('po-recommend').innerHTML=reco.map(item=>{
+    const alreadyOrdered=purchaseOrders.some(p=>p.invId===item.id&&p.status==='ordered');
+    const recQty=Math.max(0,item.max-item.count);
+    const poB=alreadyOrdered?'<span class="badge b-po-ordered">발주중</span>':`<button class="btn btn-purple btn-sm" onclick="quickPo(${item.id})">발주 등록</button>`;
+    return`<tr class="${invStatus(item)==='danger'?'tr-danger':'tr-warn'}"><td style="font-size:12px">${item.name}</td><td class="td-mono" style="color:${invStatus(item)==='danger'?'var(--red-tx)':'var(--amb-tx)'}">${available(item)}개</td><td class="td-mono">${cfg.threshold}개</td><td class="td-mono">${recQty}개</td><td>${poB}</td></tr>`;
+  }).join('')||`<tr><td colspan="5"><div class="empty-state">재주문 권고 품목 없음 ✓</div></td></tr>`;
+}
+
+// ── STATS ──
+function renderStatsPage(){
+  const totalSold=inventory.reduce((a,b)=>a+(b.sold||0),0);
+  const totalOrders=orders.length;
+  const shipRate=totalOrders>0?Math.round(orders.filter(o=>o.status==='shipped').length/totalOrders*100):0;
+  const delRate=totalOrders>0?Math.round(orders.filter(o=>o.status==='delayed').length/totalOrders*100):0;
+  document.getElementById('stats-metrics').innerHTML=[
+    {l:'총 판매량',v:totalSold+'개',c:'green'},{l:'총 주문',v:totalOrders+'건',c:'blue'},{l:'출고율',v:shipRate+'%',c:''},  {l:'지연율',v:delRate+'%',c:delRate>10?'red':'amber'},
+  ].map(m=>`<div class="mcard"><div class="mcard-label">${m.l}</div><div class="mcard-val ${m.c}">${m.v}</div></div>`).join('');
+  const sorted=[...inventory].filter(i=>i.sold>0).sort((a,b)=>b.sold-a.sold);
+  document.getElementById('stats-body').innerHTML=sorted.map((item,idx)=>{
+    const pct=totalSold>0?Math.round(item.sold/totalSold*100):0;
+    return`<tr><td class="td-mono" style="color:${idx<3?'var(--amb-tx)':'var(--s500)'}">#${idx+1}</td><td style="font-size:12px">${item.name}</td><td class="td-mono">${item.sold}개</td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:#1971c2"></div></div><span class="bar-pct">${pct}%</span></div></td></tr>`;
+  }).join('')||`<tr><td colspan="4"><div class="empty-state">판매 데이터가 없습니다. 시뮬레이션을 실행해보세요.</div></td></tr>`;
+  const catStats={};
+  CATEGORIES.forEach(c=>{catStats[c]={sold:0,orders:0,cancelled:0,delayed:0}});
+  orders.forEach(o=>{
+    // 해당 주문에 포함된 카테고리를 중복 없이 집계
+    const cats=new Set(o.items.map(i=>{const inv=invById(i.invId);return inv?inv.cat:null}).filter(Boolean));
+    cats.forEach(c=>{
+      if(!catStats[c])return;
+      catStats[c].orders++;
+      if(o.status==='cancelled')catStats[c].cancelled++;
+      if(o.status==='delayed')catStats[c].delayed++;
+    });
+  });
+  inventory.forEach(i=>{if(catStats[i.cat])catStats[i.cat].sold+=i.sold||0});
+  document.getElementById('stats-cat-body').innerHTML=CATEGORIES.map(c=>{
+    const s=catStats[c];const canRate=s.orders>0?Math.round(s.cancelled/s.orders*100):0;const delRate2=s.orders>0?Math.round(s.delayed/s.orders*100):0;
+    return`<tr><td><span class="badge b-gray">${c}</span></td><td class="td-mono">${s.sold}개</td><td class="td-mono" style="color:${canRate>15?'var(--red-tx)':'var(--s700)'}">${canRate}%</td><td class="td-mono" style="color:${delRate2>10?'var(--red-tx)':'var(--s700)'}">${delRate2}%</td></tr>`;
+  }).join('');
+}
+
+// ── HISTORY ──
+function renderHistoryPage(){document.getElementById('full-hist').innerHTML=historyLog.map(h=>`<div class="hist-row"><span class="hist-time">${h.time}</span><span class="hist-dot" style="background:${h.color}"></span><span class="hist-msg">${h.msg}</span></div>`).join('')||'<div class="empty-state">이력이 없습니다</div>'}
+function clearHistory(){historyLog=[];renderHistoryPage()}
+
+// ── SETTINGS ──
+function renderSettingsPage(){
+  // 현재 cfg 값을 입력란에 복원
+  const sn=document.getElementById('set-shop-name'); if(sn) sn.value=cfg.shopName;
+  const st=document.getElementById('set-threshold'); if(st) st.value=cfg.threshold;
+  const sm=document.getElementById('set-auto-msg');  if(sm) sm.value=cfg.autoMsg?'1':'0';
+  const si=document.getElementById('set-sim-interval'); if(si) si.value=cfg.simInterval/1000;
+}
+function applyShopName(){
+  const n=document.getElementById('set-shop-name')?.value?.trim();
+  if(!n)return;
+  cfg.shopName=n;
+  document.getElementById('tb-shop-name').textContent=n;
+  addHistory('#495057','쇼핑몰 이름 변경: '+n);
+}
+function applyAutoMsg(){
+  const v=document.getElementById('set-auto-msg')?.value;
+  cfg.autoMsg=(v==='1');
+  addHistory('#495057','배송지연 메시지 자동 발송: '+(cfg.autoMsg?'켜짐':'꺼짐'));
+}
+function applyThreshold(){
+  const t=parseInt(document.getElementById('set-threshold')?.value)||5;
+  cfg.threshold=t;
+  addHistory('#495057','재주문 임계값 변경: '+t+'개');
+  refreshAll();
+}
+function applySimInterval(){
+  const v=parseInt(document.getElementById('set-sim-interval')?.value)||2;
+  cfg.simInterval=Math.max(1,v)*1000;
+  if(autoTimer){clearInterval(autoTimer);autoTimer=setInterval(simulateTick,cfg.simInterval)}
+  addHistory('#495057','시뮬레이션 간격 변경: '+v+'초');
+}
+
+// ── ORDER ACTIONS ──
+function advanceOrder(oid){
+  const o=orders.find(x=>x.id===oid);if(!o)return;
+  const next=STATUS_NEXT[o.status];if(!next)return;
+  if(o.status==='confirmed'){
+    const ok=o.items.every(i=>{const inv=invById(i.invId);return inv&&available(inv)>=i.qty});
+    if(!ok){openDelayModal(oid);return}
+    o.items.forEach(i=>{const inv=invById(i.invId);if(inv){inv.reserved+=i.qty;inv.updatedAt=new Date()}});
+  }
+  if(o.status==='processing'){
+    o.items.forEach(i=>{const inv=invById(i.invId);if(inv){const q=Math.min(i.qty,inv.count);inv.count=Math.max(0,inv.count-q);inv.reserved=Math.max(0,inv.reserved-i.qty);inv.sold=(inv.sold||0)+q;inv.updatedAt=new Date()}});
+    salesLog.push({time:new Date(),items:o.items.map(i=>({...i}))});
+  }
+  const old=o.status;o.status=next;
+  addHistory('#1971c2',`주문 ${oid} (${o.buyer}): ${STATUS_LABELS[old]} → ${STATUS_LABELS[next]}`);
+  refreshAll();
+}
+
+function openCancelModal(oid){
+  const o=orders.find(x=>x.id===oid);if(!o)return;
+  document.getElementById('modalContainer').innerHTML=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-head"><div class="modal-title">주문 취소</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <div class="field"><label>주문번호</label><div class="field-readonly">${oid} — ${o.buyer}</div></div>
+          <div class="field"><label>취소 사유 *</label>
+            <select id="cancel-reason" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--s300);border-radius:var(--r4);font-family:var(--font)">
+              ${CANCEL_REASONS.map(r=>`<option>${r}</option>`).join('')}
+            </select>
+          </div>
+          <div class="field"><label>환불 방법</label>
+            <select id="cancel-refund-method" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--s300);border-radius:var(--r4);font-family:var(--font)">
+              <option>카드 취소</option><option>계좌 이체</option><option>포인트 환급</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal()">닫기</button>
+          <button class="btn btn-danger" onclick="confirmCancel('${oid}')">취소 확정</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function confirmCancel(oid){
+  const o=orders.find(x=>x.id===oid);if(!o)return;
+  if(o.status==='processing'){o.items.forEach(i=>{const inv=invById(i.invId);if(inv){inv.reserved=Math.max(0,inv.reserved-i.qty);inv.updatedAt=new Date()}})}
+  const old=o.status;
+  o.status='cancelled';o.cancelReason=document.getElementById('cancel-reason')?.value;
+  o.refundMethod=document.getElementById('cancel-refund-method')?.value;
+  o.refundStatus='pending';o.cancelledAt=new Date();
+  addHistory('#868e96',`주문 ${oid} (${o.buyer}) 취소 — 사유: ${o.cancelReason} / 환불방법: ${o.refundMethod}`);
+  closeModal();refreshAll();
+}
+
+function processRefund(oid){
+  const o=orders.find(x=>x.id===oid);if(!o)return;
+  if(o.refundStatus==='pending'){
+    o.refundStatus='processing';
+    addHistory('#5f3dc4',`주문 ${oid} (${o.buyer}) 환불 처리 시작 (${o.refundMethod||''})`);
+  } else if(o.refundStatus==='processing'){
+    o.refundStatus='done';
+    addHistory('#2f9e44',`주문 ${oid} (${o.buyer}) 환불 완료 (${o.refundMethod||''})`);
+  }
+  refreshAll();
+}
+
+// ── DELAY ACTIONS ──
+function openDelayModal(oid){
+  const o=orders.find(x=>x.id===oid);if(!o)return;
+  const msg=buildDelayMsg(o);
+  document.getElementById('modalContainer').innerHTML=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal modal-lg">
+        <div class="modal-head"><div class="modal-title">배송지연 처리 — ${oid}</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <div class="alert-strip amber" style="margin-bottom:14px">⚠ 재고 부족으로 즉시 출고가 불가합니다. 주문은 유지되며 재고 보충 후 처리를 재개할 수 있습니다.</div>
+          <div class="field"><label>구매자</label><div class="field-readonly">${o.buyer} — 010-****-****</div></div>
+          <div class="field"><label>발송할 고객 안내 메시지</label><div class="msg-preview">${msg}</div></div>
+          <div class="field"><label>담당자 메모</label><input id="delay-memo" type="text" placeholder="예: 3일 내 입고 예정"/></div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-ghost" onclick="closeModal()">취소</button>
+          <button class="btn btn-cyan" onclick="confirmDelay('${oid}')">지연 처리 + 메시지 발송</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function confirmDelay(oid){
+  const o=orders.find(x=>x.id===oid);if(!o)return;
+  const memo=document.getElementById('delay-memo')?.value||'';
+  o.status='delayed';o.msgSentAt=new Date();o.delayMemo=memo;
+  addHistory('#0b7285',`주문 ${oid} (${o.buyer}) 배송지연 처리 + 고객 메시지 발송${memo?' / '+memo:''}`);
+  closeModal();refreshAll();
+}
+
+function resolveDelay(oid){
+  const o=orders.find(x=>x.id===oid);if(!o)return;
+  const ok=o.items.every(i=>{const inv=invById(i.invId);return inv&&available(inv)>=i.qty});
+  if(!ok){alert('아직 재고가 부족합니다.');return}
+  o.status='confirmed';
+  addHistory('#1971c2',`주문 ${oid} (${o.buyer}) 지연 해제 → 확인됨`);
+  refreshAll();
+}
+
+// ── ORDER DETAIL ──
+function openOrderDetail(oid){
+  const o=orders.find(x=>x.id===oid);if(!o)return;
+  const rows=o.items.map(i=>{const inv=invById(i.invId);const a=inv?available(inv):0;const ok=a>=i.qty;return`<tr><td>${i.name}</td><td class="td-mono">${i.qty}</td><td class="td-mono">${inv?inv.count:'-'}</td><td class="td-mono" style="color:${ok?'var(--grn-tx)':'var(--red-tx)'}">${a}</td><td><span class="badge ${ok?'b-ok':'b-danger'}">${ok?'충분':'부족'}</span></td></tr>`;}).join('');
+  const nextS=STATUS_NEXT[o.status];
+  const hasLow=o.items.some(i=>{const inv=invById(i.invId);return !inv||available(inv)<i.qty});
+  const advB=nextS&&!hasLow?`<button class="btn btn-dark" onclick="advanceOrder('${oid}');closeModal()">${STATUS_NEXT_LABEL[o.status]}</button>`:'';
+  const delB=(o.status!=='shipped'&&o.status!=='cancelled'&&o.status!=='delayed'&&hasLow)?`<button class="btn btn-cyan" onclick="closeModal();openDelayModal('${oid}')">지연 처리</button>`:'';
+  const resB=o.status==='delayed'?`<button class="btn btn-green" onclick="resolveDelay('${oid}');closeModal()">처리 재개</button>`:'';
+  const canB=(o.status!=='shipped'&&o.status!=='cancelled')?`<button class="btn btn-danger" onclick="closeModal();openCancelModal('${oid}')">주문 취소</button>`:'';
+  const delayInfo=o.status==='delayed'?`<div class="field"><label>배송지연 정보</label><div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0">${o.msgSentAt?`<span class="msg-sent-badge">✉ 고객 메시지 발송 — ${fmtTime(o.msgSentAt)}</span>`:''} ${o.delayMemo?`<span class="badge b-gray">메모: ${o.delayMemo}</span>`:''}</div></div>`:
+    o.status==='cancelled'?`<div class="field"><label>취소 정보</label><div style="display:flex;gap:8px;flex-wrap:wrap;padding:8px 0"><span class="badge b-gray">${o.cancelReason||''}</span><span class="badge b-gray">${o.refundMethod||''}</span><span class="badge ${o.refundStatus==='done'?'b-ok':'b-pink'}">${REFUND_LABELS[o.refundStatus]||''}</span></div></div>`:'';
+  document.getElementById('modalContainer').innerHTML=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal modal-lg">
+        <div class="modal-head"><div class="modal-title">주문 상세 — ${oid}</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <div class="field-row" style="margin-bottom:14px">
+            <div class="field"><label>주문번호</label><div class="field-readonly" style="font-family:var(--mono)">${oid}</div></div>
+            <div class="field"><label>구매자</label><div class="field-readonly">${o.buyer}</div></div>
+            <div class="field"><label>접수 시간</label><div class="field-readonly" style="font-family:var(--mono)">${fmtTime(o.createdAt)}</div></div>
+            <div class="field"><label>현재 상태</label><div style="padding:6px 0">${statusBadge(o.status)}</div></div>
+          </div>
+          ${delayInfo}
+          <div class="field"><label>주문 품목 및 재고 확인</label>
+            <table class="order-items"><thead><tr><th>품목명</th><th>주문수량</th><th>현재재고</th><th>가용재고</th><th>재고상태</th></tr></thead><tbody>${rows}</tbody></table>
+          </div>
+          ${o.note?`<div class="field"><label>배송 요청사항</label><div class="field-readonly">${o.note}</div></div>`:''}
+        </div>
+        <div class="modal-foot">${canB}<div style="flex:1"></div><button class="btn btn-ghost" onclick="closeModal()">닫기</button>${delB}${resB}${advB}</div>
+      </div>
+    </div>`;
+}
+
+// ── NEW ORDER MODAL ──
+function openNewOrder(){
+  const opts=inventory.map(i=>`<option value="${i.id}">${i.cat} > ${i.name} (가용: ${available(i)})</option>`).join('');
+  document.getElementById('modalContainer').innerHTML=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal modal-lg">
+        <div class="modal-head"><div class="modal-title">신규 주문 접수</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <div class="field-row">
+            <div class="field"><label>구매자 이름 *</label><input id="no-buyer" type="text" placeholder="김나연"/></div>
+            <div class="field"><label>배송 요청사항</label><input id="no-note" type="text" placeholder="문 앞 배송 등"/></div>
+          </div>
+          <div class="field"><label>주문 품목</label>
+            <div id="no-items"><div class="no-item-row" style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><select class="no-inv-sel" style="flex:2;font-size:12px;padding:7px 8px;border:1px solid var(--s300);border-radius:var(--r4);font-family:var(--font)">${opts}</select><input class="no-qty" type="number" min="1" step="1" value="1" style="width:70px;font-size:13px;padding:7px 8px;border:1px solid var(--s300);border-radius:var(--r4)"/><button type="button" onclick="removeOrderRow(this)" style="background:none;border:none;cursor:pointer;color:var(--s400);font-size:18px">×</button></div></div>
+            <button type="button" class="btn btn-ghost btn-sm" onclick="addOrderRow()" style="margin-top:4px">+ 품목 추가</button>
+          </div>
+          <div id="no-stock-check" style="margin-top:8px"></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">취소</button><button class="btn btn-dark" onclick="saveNewOrder()">주문 접수</button></div>
+      </div>
+    </div>`;
+  setTimeout(()=>document.getElementById('no-buyer').focus(),50);
+  const noItems=document.getElementById('no-items');
+  noItems.addEventListener('change',checkOrderStock);
+  noItems.addEventListener('input',checkOrderStock);
+}
+function addOrderRow(){const opts=inventory.map(i=>`<option value="${i.id}">${i.cat} > ${i.name} (가용: ${available(i)})</option>`).join('');const row=document.createElement('div');row.className='no-item-row';row.style.cssText='display:flex;gap:8px;margin-bottom:8px;align-items:center';row.innerHTML=`<select class="no-inv-sel" style="flex:2;font-size:12px;padding:7px 8px;border:1px solid var(--s300);border-radius:var(--r4);font-family:var(--font)">${opts}</select><input class="no-qty" type="number" min="1" step="1" value="1" style="width:70px;font-size:13px;padding:7px 8px;border:1px solid var(--s300);border-radius:var(--r4)"/><button type="button" onclick="removeOrderRow(this)" style="background:none;border:none;cursor:pointer;color:var(--s400);font-size:18px">×</button>`;document.getElementById('no-items').appendChild(row);row.querySelector('select').addEventListener('change',checkOrderStock);row.querySelector('input').addEventListener('change',checkOrderStock);row.querySelector('input').addEventListener('input',checkOrderStock);checkOrderStock()}
+function removeOrderRow(btn){const rows=document.querySelectorAll('.no-item-row');if(rows.length<=1)return;btn.closest('.no-item-row').remove();checkOrderStock()}
+function checkOrderStock(){const rows=document.querySelectorAll('.no-item-row');let h='';rows.forEach(r=>{const id=parseInt(r.querySelector('.no-inv-sel').value);const qty=parseInt(r.querySelector('.no-qty').value)||1;const inv=invById(id);if(!inv)return;const a=available(inv);const ok=a>=qty;h+=`<div style="font-size:12px;margin-bottom:3px"><span style="color:var(--s600)">${inv.name}</span>: 주문 <strong>${qty}</strong> / 가용 <strong style="color:${ok?'var(--grn-tx)':'var(--red-tx)'}">${a}</strong> ${ok?'<span class="badge b-ok" style="margin-left:4px">OK</span>':'<span class="badge b-danger" style="margin-left:4px">부족 → 지연 처리</span>'}</div>`;});const el=document.getElementById('no-stock-check');if(el)el.innerHTML=h}
+function saveNewOrder(){
+  const buyer=(document.getElementById('no-buyer').value||'').trim();if(!buyer){document.getElementById('no-buyer').focus();return}
+  const rows=document.querySelectorAll('.no-item-row');const items=[];
+  rows.forEach(r=>{const id=parseInt(r.querySelector('.no-inv-sel').value);const qty=parseInt(r.querySelector('.no-qty').value)||1;const inv=invById(id);if(inv)items.push({invId:id,name:inv.name,qty})});
+  if(!items.length){alert('품목을 선택하세요');return}
+  const note=document.getElementById('no-note').value||'';
+  const allOk=items.every(i=>{const inv=invById(i.invId);return inv&&available(inv)>=i.qty});
+  const newO={id:'ORD-'+nextOrderId++,buyer,items,note,status:allOk?'pending':'delayed',createdAt:new Date(),msgSentAt:(!allOk&&cfg.autoMsg)?new Date():null};
+  orders.push(newO);
+  if(!allOk){addHistory('#0b7285',`신규 주문 ${newO.id} (${buyer}) — 재고 부족, 배송지연 처리${cfg.autoMsg?' + 메시지 자동 발송':''}`);}
+  else{addHistory('#1971c2',`신규 주문 ${newO.id} (${buyer}) 접수`)}
+  closeModal();refreshAll();
+}
+
+// ── INVENTORY CRUD ──
+function openInvAdd(){
+  document.getElementById('modalContainer').innerHTML=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-head"><div class="modal-title">품목 추가</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <div class="field"><label>카테고리</label><select id="ia-cat" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--s300);border-radius:var(--r4);font-family:var(--font)">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+          <div class="field"><label>품목명 *</label><input id="ia-name" type="text" placeholder="예: 오버핏 티셔츠 (블랙/M)"/></div>
+          <div class="field-row"><div class="field"><label>현재 재고 *</label><input id="ia-count" type="number" min="0" step="1" value="10"/></div><div class="field"><label>최대 재고</label><input id="ia-max" type="number" min="1" step="1" value="50"/></div></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">취소</button><button class="btn btn-dark" onclick="saveInvAdd()">추가</button></div>
+      </div>
+    </div>`;
+  setTimeout(()=>document.getElementById('ia-name').focus(),50);
+}
+function saveInvAdd(){
+  const name=(document.getElementById('ia-name').value||'').trim();if(!name){document.getElementById('ia-name').focus();return}
+  const cat=document.getElementById('ia-cat').value;
+  const count=parseInt(document.getElementById('ia-count').value)||0;const max=parseInt(document.getElementById('ia-max').value)||50;
+  inventory.push({id:nextInvId++,cat,name,count,reserved:0,max,sold:0,updatedAt:new Date()});
+  addHistory('#2f9e44',`품목 추가: [${cat}] ${name} (초기 ${count}개)`);
+  checkDelayedForRestock();closeModal();refreshAll();
+}
+function openInvEdit(id){
+  const item=invById(id);if(!item)return;
+  document.getElementById('modalContainer').innerHTML=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-head"><div class="modal-title">품목 수정</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <div class="field"><label>카테고리</label><select id="ie-cat" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--s300);border-radius:var(--r4);font-family:var(--font)">${CATEGORIES.map(c=>`<option${c===item.cat?' selected':''}>${c}</option>`).join('')}</select></div>
+          <div class="field"><label>품목명 *</label><input id="ie-name" type="text" value="${item.name}"/></div>
+          <div class="field-row"><div class="field"><label>현재 재고</label><input id="ie-count" type="number" min="0" step="1" value="${item.count}"/></div><div class="field"><label>최대 재고</label><input id="ie-max" type="number" min="1" step="1" value="${item.max}"/></div></div>
+          <div class="field-hint">예약 수량 ${item.reserved}개는 처리중 주문에서 자동 관리됩니다.</div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-danger" onclick="deleteInvItem(${item.id});closeModal()">삭제</button><div style="flex:1"></div><button class="btn btn-ghost" onclick="closeModal()">취소</button><button class="btn btn-dark" onclick="saveInvEdit(${item.id})">저장</button></div>
+      </div>
+    </div>`;
+}
+function saveInvEdit(id){
+  const item=invById(id);if(!item)return;
+  const name=(document.getElementById('ie-name').value||'').trim();if(!name)return;
+  const cat=document.getElementById('ie-cat').value;
+  const count=parseInt(document.getElementById('ie-count').value)||0;const max=parseInt(document.getElementById('ie-max').value)||50;
+  const msgs=[];
+  if(item.name!==name)msgs.push(`이름: ${item.name}→${name}`);if(item.count!==count)msgs.push(`재고: ${item.count}→${count}`);if(item.max!==max)msgs.push(`최대: ${item.max}→${max}`);
+  item.name=name;item.cat=cat;item.count=count;item.max=max;item.updatedAt=new Date();
+  if(msgs.length)addHistory('#495057','품목 수정: '+msgs.join(' / '));
+  checkDelayedForRestock();closeModal();refreshAll();
+}
+function deleteInvItem(id){
+  const idx=inventory.findIndex(i=>i.id===id);if(idx<0)return;
+  const name=inventory[idx].name;inventory.splice(idx,1);
+  addHistory('#c92a2a','품목 삭제: '+name);refreshAll();
+}
+
+function checkDelayedForRestock(){
+  orders.filter(o=>o.status==='delayed').forEach(o=>{
+    const ok=o.items.every(i=>{const inv=invById(i.invId);return inv&&available(inv)>=i.qty});
+    if(ok)addHistory('#2f9e44',`[알림] 주문 ${o.id} (${o.buyer}) — 재고 보충 완료, 처리 재개 가능`);
+  });
+}
+
+// ── PO ACTIONS ──
+function openPoAdd(){
+  const opts=inventory.map(i=>`<option value="${i.id}">${i.cat} > ${i.name} (현재: ${i.count}개)</option>`).join('');
+  const recDate=new Date();recDate.setDate(recDate.getDate()+5);
+  const eta=recDate.toISOString().slice(0,10);
+  document.getElementById('modalContainer').innerHTML=`
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal">
+        <div class="modal-head"><div class="modal-title">발주 등록</div><button class="modal-close" onclick="closeModal()">×</button></div>
+        <div class="modal-body">
+          <div class="field"><label>발주 품목 *</label><select id="po-item" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid var(--s300);border-radius:var(--r4);font-family:var(--font)">${opts}</select></div>
+          <div class="field-row"><div class="field"><label>발주 수량 *</label><input id="po-qty" type="number" min="1" step="1" value="20"/></div><div class="field"><label>공급업체</label><select id="po-supplier" style="font-size:13px;padding:8px 10px;border:1px solid var(--s300);border-radius:var(--r4);font-family:var(--font)">${SUPPLIERS.map(s=>`<option>${s}</option>`).join('')}</select></div></div>
+          <div class="field"><label>예상 입고일</label><input id="po-eta" type="date" value="${eta}"/></div>
+        </div>
+        <div class="modal-foot"><button class="btn btn-ghost" onclick="closeModal()">취소</button><button class="btn btn-purple" onclick="savePoAdd()">발주 등록</button></div>
+      </div>
+    </div>`;
+}
+function savePoAdd(){
+  const invId=parseInt(document.getElementById('po-item').value);const qty=parseInt(document.getElementById('po-qty').value)||1;
+  const supplier=document.getElementById('po-supplier').value;const eta=document.getElementById('po-eta').value;
+  const inv=invById(invId);if(!inv)return;
+  purchaseOrders.push({poId:'PO-'+nextPoId++,invId,itemName:inv.name,qty,supplier,eta,status:'ordered',orderedAt:new Date()});
+  addHistory('#5f3dc4',`발주 등록: ${inv.name} ${qty}개 — ${supplier} (입고예정: ${eta})`);
+  closeModal();refreshAll();
+}
+function quickPo(invId){
+  const inv=invById(invId);if(!inv)return;
+  const recDate=new Date();recDate.setDate(recDate.getDate()+5);
+  const eta=recDate.toISOString().slice(0,10);
+  const qty=Math.max(1,inv.max-inv.count);
+  const supplier=SUPPLIERS[Math.floor(Math.random()*SUPPLIERS.length)];
+  purchaseOrders.push({poId:'PO-'+nextPoId++,invId,itemName:inv.name,qty,supplier,eta,status:'ordered',orderedAt:new Date()});
+  addHistory('#5f3dc4',`발주 등록 (바로발주): ${inv.name} ${qty}개 — ${supplier}`);
+  refreshAll();
+}
+function receiveStock(poId){
+  const po=purchaseOrders.find(p=>p.poId===poId);if(!po)return;
+  const inv=invById(po.invId);if(!inv)return;
+  inv.count+=po.qty;inv.updatedAt=new Date();
+  po.status='arrived';
+  addHistory('#2f9e44',`입고 완료: ${po.itemName} ${po.qty}개 — 현재 재고 ${inv.count}개`);
+  checkDelayedForRestock();
+  refreshAll();
+}
+
+// ── SIMULATION ──
+function simulateTick(){
+  ticks++;
+  if(Math.random()<0.55&&inventory.length>0){
+    const buyer=BUYERS[Math.floor(Math.random()*BUYERS.length)];
+    const n=Math.random()<0.7?1:2;
+    const items=[...inventory].sort(()=>Math.random()-.5).slice(0,n).map(i=>({invId:i.id,name:i.name,qty:Math.random()<0.85?1:2}));
+    const allOk=items.every(i=>{const inv=invById(i.invId);return inv&&available(inv)>=i.qty});
+    const newO={id:'ORD-'+nextOrderId++,buyer,items,status:allOk?'pending':'delayed',createdAt:new Date(),msgSentAt:(!allOk&&cfg.autoMsg)?new Date():null};
+    orders.push(newO);
+    addHistory(allOk?'#1971c2':'#0b7285',`[자동] 주문 ${newO.id} (${buyer}) — ${items.map(i=>i.name+'×'+i.qty).join(', ')}${!allOk?' → 배송지연':''}`);
+  }
+  orders.filter(o=>o.status==='pending').forEach(o=>{if(Math.random()<0.25){o.status='confirmed';addHistory('#5f3dc4',`[자동] 주문 ${o.id} 확인됨`)}});
+
+  // 확인됨 → 처리중 자동 전환 (재고 충분 시)
+  orders.filter(o=>o.status==='confirmed').forEach(o=>{
+    if(Math.random()<0.3){
+      const ok=o.items.every(i=>{const inv=invById(i.invId);return inv&&available(inv)>=i.qty});
+      if(ok){
+        o.items.forEach(i=>{const inv=invById(i.invId);if(inv){inv.reserved+=i.qty;inv.updatedAt=new Date()}});
+        o.status='processing';
+        addHistory('#5f3dc4',`[자동] 주문 ${o.id} 처리 시작`);
+      }
+    }
+  });
+
+  // 처리중 → 출고완료 자동 전환 + 재고 차감 + 판매량 누적
+  orders.filter(o=>o.status==='processing').forEach(o=>{
+    if(Math.random()<0.4){
+      o.items.forEach(i=>{
+        const inv=invById(i.invId);
+        if(inv){
+          const q=Math.min(i.qty,inv.count);
+          inv.count=Math.max(0,inv.count-q);
+          inv.reserved=Math.max(0,inv.reserved-i.qty);
+          inv.sold=(inv.sold||0)+q;
+          inv.updatedAt=new Date();
+        }
+      });
+      o.status='shipped';
+      salesLog.push({time:new Date(),items:o.items.map(i=>({...i}))});
+      addHistory('#2f9e44',`[자동] 주문 ${o.id} (${o.buyer}) 출고 완료`);
+    }
+  });
+  refreshAll();
+}
+
+function toggleAuto(){
+  const icon=document.getElementById('autoIcon');const label=document.getElementById('autoLabel');
+  const dot=document.getElementById('liveDot');const lv=document.getElementById('liveLabel');
+  if(autoTimer){clearInterval(autoTimer);autoTimer=null;icon.innerHTML='<polygon points="5 3 19 12 5 21 5 3"/>';label.textContent='자동 시뮬레이션';dot.classList.remove('pulse');lv.textContent='일시정지';}
+  else{autoTimer=setInterval(simulateTick,cfg.simInterval);icon.innerHTML='<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';label.textContent='시뮬레이션 중지';dot.classList.add('pulse');lv.textContent='실시간 연동';}
+}
+
+function closeModal(){document.getElementById('modalContainer').innerHTML=''}
+function refreshAll(){updateBadges();renderCurrentPage()}
+setInterval(()=>{updateBadges();renderCurrentPage()},8000);
+// 초기화
+updateBadges();
+renderOverview();
+</script>
+</body>
+</html>
