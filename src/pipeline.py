@@ -1,7 +1,7 @@
 """
 pipeline.py
 ===========
-ICT Module 4 – Intermediate Project
+ICT – Intermediate Project
 Student: Lim Yujin (2024270678)
 
 Implements the 6-step data pipeline described in the project proposal:
