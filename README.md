@@ -9,8 +9,6 @@
 
 **[▶ Watch the Presentation Video](https://drive.google.com/file/d/1yOO5CDoaD8G_1QvKDDwiPeVSjF-9rHki/view)**
 
-> ⚠️ Replace the URL above with your actual YouTube video link before submission.
-
 ---
 
 ## 1. Project Overview
